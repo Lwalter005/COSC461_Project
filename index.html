@@ -31,7 +31,7 @@
       return;
     }
 
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true});
 
     try {
       const completion = await client.chat.completions.create({
