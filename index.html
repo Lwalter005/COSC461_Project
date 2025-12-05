@@ -19,56 +19,50 @@
   <pre id="response"></pre>
 
   <script type="module">
-    import OpenAI from "https://cdn.jsdelivr.net/npm/openai@4.58.1/+esm";
+  import OpenAI from "https://cdn.jsdelivr.net/npm/openai@4.58.1/+esm";
 
-    async function askTutor() {
-      const apiKey = document.getElementById("apiKey").value;
-      const question = document.getElementById("question").value;
+  async function askTutor() {
+    const apiKey = document.getElementById("apiKey").value;
+    const question = document.getElementById("question").value;
 
-      if (!apiKey || !question) {
-        document.getElementById("response").textContent =
-          "Please enter your API key and a question.";
-        return;
-      }
-
-      const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true});
-
-      try {
-        const response = await client.responses.create({
-          model: "gpt-5-mini",
-          input: [
-            {
-              role: "system",
-              content:
-                "You are a friendly, patient AI tutor for an introductory Python course. " +
-                "Your job is to help a beginner learn Python by doing ALL of the following when relevant:\n" +
-                "1) Explain Python fundamentals.\n" +
-                "2) Debug small Python code snippets.\n" +
-                "3) Provide short example programs.\n" +
-                "4) Generate practice exercises.\n" +
-                "5) Encourage learning.\n\n" +
-                "Style guidelines:\n" +
-                "- Use clear, beginner-friendly language.\n" +
-                "- Use ```python fenced blocks.\n" +
-                "- Debug by summarizing, fixing, and explaining.\n" +
-                "- Number practice problems.\n" +
-                "- End with a follow-up question."
-            },
-            { role: "user", content: question }
-          ],
-          max_output_tokens: 800,
-        });
-
-        document.getElementById("response").textContent = response.output_text;
-
-      } catch (err) {
-        document.getElementById("response").textContent =
-          "OpenAI API error: " + err.message;
-      }
+    if (!apiKey || !question) {
+      document.getElementById("response").textContent =
+        "Please enter your API key and a question.";
+      return;
     }
 
-    window.askTutor = askTutor;
-  </script>
+    const client = new OpenAI({ apiKey });
+
+    try {
+      const completion = await client.chat.completions.create({
+        model: "gpt-4o-mini",   // browser-supported model
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a friendly, patient AI tutor for an introductory Python course. " +
+              "Explain concepts clearly, debug code, give examples, provide practice problems, " +
+              "use ```python``` blocks, and finish with a follow-up question."
+          },
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        max_tokens: 700
+      });
+
+      document.getElementById("response").textContent =
+        completion.choices[0].message.content;
+
+    } catch (err) {
+      document.getElementById("response").textContent =
+        "OpenAI API error: " + err.message;
+    }
+  }
+
+  window.askTutor = askTutor;
+</script>
 
 </body>
 </html>
