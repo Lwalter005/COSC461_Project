@@ -1,130 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>AI Python Tutor</title>
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f2f2f2;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 40px auto;
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.1);
-    }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-      margin-bottom: 5px;
-    }
-
-    input[type="text"], textarea {
-      width: 100%;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
-    textarea {
-      height: 140px;
-      resize: vertical;
-    }
-
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background: #0078ff;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #005fcc;
-    }
-
-    .response-box {
-      white-space: pre-wrap;
-      background: #fafafa;
-      padding: 15px;
-      margin-top: 25px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      font-family: Consolas, monospace;
-    }
-  </style>
 </head>
 <body>
+  <h1>AI Python Tutor (Client-Only Version)</h1>
 
-  <div class="container">
-    <h1>AI Python Tutor</h1>
+  <p>Enter your OpenAI API key (it stays in your browser only):</p>
+  <input id="apiKey" type="password" style="width:300px;"><br><br>
 
-    <label for="apiKey">OpenAI API Key</label>
-    <input type="text" id="apiKey" placeholder="Enter your API key..." />
+  <p>Your question:</p>
+  <textarea id="question" rows="6" cols="60"></textarea><br><br>
 
-    <label for="question">Question / Code Snippet</label>
-    <textarea id="question" placeholder="Ask something about Python..."></textarea>
+  <button onclick="askTutor()">Ask Tutor</button>
 
-    <button onclick="askTutor()">Ask Tutor</button>
+  <h2>Response:</h2>
+  <pre id="response"></pre>
 
-    <div id="response" class="response-box" style="display:none;"></div>
-  </div>
+  <script type="module">
+    import OpenAI from "https://cdn.jsdelivr.net/npm/openai@4.58.1/+esm";
 
-  <script>
     async function askTutor() {
-      const apiKey = document.getElementById("apiKey").value.trim();
-      const question = document.getElementById("question").value.trim();
-      const responseBox = document.getElementById("response");
+      const apiKey = document.getElementById("apiKey").value;
+      const question = document.getElementById("question").value;
 
       if (!apiKey || !question) {
-        alert("Please enter both an API key and a question.");
+        document.getElementById("response").textContent =
+          "Please enter your API key and a question.";
         return;
       }
 
-      responseBox.style.display = "block";
-      responseBox.textContent = "Thinking...";
+      const client = new OpenAI({ apiKey });
 
       try {
-        const res = await fetch("/api/ask", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ apiKey, question }),
+        const response = await client.responses.create({
+          model: "gpt-5-mini",
+          input: [
+            {
+              role: "system",
+              content:
+                "You are a friendly, patient AI tutor for an introductory Python course. " +
+                "Your job is to help a beginner learn Python by doing ALL of the following when relevant:\n" +
+                "1) Explain Python fundamentals.\n" +
+                "2) Debug small Python code snippets.\n" +
+                "3) Provide short example programs.\n" +
+                "4) Generate practice exercises.\n" +
+                "5) Encourage learning.\n\n" +
+                "Style guidelines:\n" +
+                "- Use clear, beginner-friendly language.\n" +
+                "- Use ```python fenced blocks.\n" +
+                "- Debug by summarizing, fixing, and explaining.\n" +
+                "- Number practice problems.\n" +
+                "- End with a follow-up question."
+            },
+            { role: "user", content: question }
+          ],
+          max_output_tokens: 800,
         });
 
-        const data = await res.json();
-
-        if (data.error) {
-          responseBox.textContent = "Error: " + data.error;
-        } else {
-          responseBox.textContent = data.answer;
-        }
+        document.getElementById("response").textContent = response.output_text;
 
       } catch (err) {
-        responseBox.textContent = "Network or server error.";
+        document.getElementById("response").textContent =
+          "OpenAI API error: " + err.message;
       }
     }
+
+    window.askTutor = askTutor;
   </script>
 
 </body>
